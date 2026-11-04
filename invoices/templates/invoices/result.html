@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Result - Invoice OCR</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root {
+            --bg: #0f0c08;
+            --card: #1a1510;
+            --border: #2e2416;
+            --accent: #c87941;
+            --accent-hover: #b56a34;
+            --text: #e8ddd0;
+            --muted: #6b5e4e;
+            --pre-bg: #0a0805;
+        }
+        * { box-sizing: border-box; }
+        body { background-color: var(--bg); }
+        .card { background-color: var(--card); border: 1px solid var(--border); }
+        .heading { color: var(--accent); }
+        .subtext { color: var(--muted); }
+        .bodytext { color: var(--text); }
+        .divider { border-color: var(--border); }
+        .pre-box { background-color: var(--pre-bg); border: 1px solid var(--border); color: var(--text); }
+        .badge-done { background-color: #1a2e1a; color: #86efac; }
+        .badge-failed { background-color: #2e1a1a; color: #fca5a5; }
+        .badge-pending { background-color: #2e2416; color: var(--accent); }
+        .badge-tesseract { background-color: #2e2416; color: var(--accent); }
+        .badge-gemini { background-color: #1a2035; color: #93c5fd; }
+        .btn-back { background-color: #221c13; color: var(--accent); transition: background-color 0.2s; }
+        .btn-back:hover { background-color: #2e2416; }
+        .btn-export { background-color: #221c13; color: var(--accent); transition: background-color 0.2s; }
+        .btn-export:hover { background-color: #2e2416; }
+    </style>
+</head>
+<body class="min-h-screen p-6">
+
+    <div class="max-w-6xl mx-auto">
+
+        <!-- Header card -->
+        <div class="card rounded-2xl shadow-2xl p-4 mb-4">
+            <div class="flex items-center justify-between">
+                <div>
+                    <div class="flex items-center gap-3 mb-1">
+                        <h1 class="text-2xl font-bold heading">Document #{{ document.id }}</h1>
+                        {% if document.status == 'done' %}
+                            <span class="badge-done text-sm font-semibold px-4 py-1 rounded-full">✓ Done</span>
+                        {% elif document.status == 'failed' %}
+                            <span class="badge-failed text-sm font-semibold px-4 py-1 rounded-full">✕ Failed</span>
+                        {% else %}
+                            <span class="badge-pending text-sm font-semibold px-4 py-1 rounded-full">{{ document.status }}</span>
+                        {% endif %}
+                    </div>
+                    <p class="subtext text-sm">Uploaded: {{ document.uploaded_at }}</p>
+                </div>
+
+                <a href="javascript:history.back()" class="btn-back text-sm font-semibold px-4 py-2 rounded-xl">← Back</a>
+            </div>
+        </div>
+
+        <!-- Three panel layout -->
+        <div class="grid grid-cols-3 gap-4 mb-4">
+
+            <!-- Left: Original Image -->
+            <div class="card rounded-2xl shadow-2xl p-5">
+                <div class="flex items-center gap-2 mb-3">
+                    <h2 class="text-base font-bold bodytext">Original</h2>
+                    <span class="badge-pending text-xs font-semibold px-3 py-1 rounded-full">Uploaded</span>
+                </div>
+                <hr class="divider mb-3">
+                <div class="h-80 overflow-hidden rounded-xl">
+                    <img src="{{ document.file.url }}" alt="Uploaded document" class="w-full h-full object-contain">
+                </div>
+            </div>
+
+            <!-- Middle: Tesseract -->
+            <div class="card rounded-2xl shadow-2xl p-5">
+                <div class="flex items-center gap-2 mb-3">
+                    <h2 class="text-base font-bold bodytext">Tesseract OCR</h2>
+                    <span class="badge-tesseract text-xs font-semibold px-3 py-1 rounded-full">Classic</span>
+                </div>
+                <hr class="divider mb-3">
+                {% if tesseract_data %}
+                    <pre class="pre-box rounded-xl p-4 text-sm whitespace-pre-wrap leading-relaxed h-80 overflow-y-auto">{{ tesseract_data.raw_text }}</pre>
+                    <div class="flex gap-2 mt-3">
+                        <a href="/export/{{ document.id }}/tesseract/txt/" class="btn-export text-xs font-semibold px-4 py-2 rounded-lg">↓ Export .txt</a>
+                        <a href="/export/{{ document.id }}/tesseract/csv/" class="btn-export text-xs font-semibold px-4 py-2 rounded-lg">↓ Export .csv</a>
+                    </div>
+                {% else %}
+                    <p class="subtext">No data.</p>
+                {% endif %}
+            </div>
+
+            <!-- Right: Gemini -->
+            <div class="card rounded-2xl shadow-2xl p-5">
+                <div class="flex items-center gap-2 mb-3">
+                    <h2 class="text-base font-bold bodytext">Gemini Flash</h2>
+                    <span class="badge-gemini text-xs font-semibold px-3 py-1 rounded-full">AI</span>
+                </div>
+                <hr class="divider mb-3">
+                {% if gemini_data %}
+                    <pre class="pre-box rounded-xl p-4 text-sm whitespace-pre-wrap leading-relaxed h-80 overflow-y-auto">{{ gemini_data.raw_text }}</pre>
+                    <div class="flex gap-2 mt-3">
+                        <a href="/export/{{ document.id }}/gemini/txt/" class="btn-export text-xs font-semibold px-4 py-2 rounded-lg">↓ Export .txt</a>
+                        <a href="/export/{{ document.id }}/gemini/csv/" class="btn-export text-xs font-semibold px-4 py-2 rounded-lg">↓ Export .csv</a>
+                    </div>
+                {% else %}
+                    <p class="subtext">No data.</p>
+                {% endif %}
+            </div>
+
+        </div>
+
+        <!-- Bottom buttons -->
+        <div class="grid grid-cols-2 gap-4">
+            <a href="/" class="btn-back block text-center font-semibold py-3 rounded-xl">← Upload Another</a>
+            <a href="/history/" class="btn-back block text-center font-semibold py-3 rounded-xl">History →</a>
+        </div>
+
+    </div>
+
+</body>
+</html>

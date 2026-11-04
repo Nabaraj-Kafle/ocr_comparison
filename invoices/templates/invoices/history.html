@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>History - Invoice OCR</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root {
+            --bg: #0f0c08;
+            --card: #1a1510;
+            --border: #2e2416;
+            --accent: #c87941;
+            --accent-hover: #b56a34;
+            --text: #e8ddd0;
+            --muted: #6b5e4e;
+            --pre-bg: #0a0805;
+        }
+        * { box-sizing: border-box; }
+        body { background-color: var(--bg); }
+        .card { background-color: var(--card); border: 1px solid var(--border); }
+        .heading { color: var(--accent); }
+        .subtext { color: var(--muted); }
+        .bodytext { color: var(--text); }
+        .divider { border-color: var(--border); }
+        .badge-done { background-color: #1a2e1a; color: #86efac; }
+        .badge-failed { background-color: #2e1a1a; color: #fca5a5; }
+        .badge-pending { background-color: #2e2416; color: var(--accent); }
+        .row { border-bottom: 1px solid var(--border); transition: background-color 0.2s; }
+        .row:hover { background-color: #221c13; }
+        .btn-back { background-color: #221c13; color: var(--accent); transition: background-color 0.2s; }
+        .btn-back:hover { background-color: #2e2416; }
+    </style>
+</head>
+<body class="min-h-screen p-6">
+
+    <div class="max-w-4xl mx-auto">
+
+        <!-- Header -->
+        <div class="card rounded-2xl shadow-2xl p-8 mb-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-2xl font-bold heading">History</h1>
+                    <p class="subtext text-sm mt-1">All previously uploaded documents</p>
+                </div>
+                <a href="/" class="btn-back font-semibold px-6 py-2 rounded-xl text-sm">
+                    -- Back to Upload
+                </a>
+            </div>
+        </div>
+
+        <!-- Document list -->
+        <div class="card rounded-2xl shadow-2xl overflow-hidden">
+
+            {% if documents %}
+                <!-- Table header -->
+                <div class="grid grid-cols-4 gap-4 px-6 py-3">
+                    <p class="subtext text-xs font-semibold uppercase">Document</p>
+                    <p class="subtext text-xs font-semibold uppercase">Uploaded</p>
+                    <p class="subtext text-xs font-semibold uppercase">Status</p>
+                    <p class="subtext text-xs font-semibold uppercase">Action</p>
+                </div>
+                <hr class="divider">
+
+                {% for doc in documents %}
+                <div class="row grid grid-cols-4 gap-4 px-6 py-4 items-center">
+                    
+                    <p class="bodytext text-sm font-semibold">Document #{{ doc.id }}</p>
+                    
+                    <p class="subtext text-sm">{{ doc.uploaded_at }}</p>
+                    
+                    {% if doc.status == 'done' %}
+                        <span class="badge-done text-xs font-semibold px-3 py-1 rounded-full w-fit">✓ Done</span>
+                    {% elif doc.status == 'failed' %}
+                        <span class="badge-failed text-xs font-semibold px-3 py-1 rounded-full w-fit">✕ Failed</span>
+                    {% else %}
+                        <span class="badge-pending text-xs font-semibold px-3 py-1 rounded-full w-fit">{{ doc.status }}</span>
+                    {% endif %}
+
+                    <a href="/result/{{ doc.id }}/" class="heading text-sm font-semibold hover:underline">View →</a>
+
+                </div>
+                {% endfor %}
+
+            {% else %}
+                <div class="p-12 text-center">
+                    <p class="subtext">No documents uploaded yet.</p>
+                    <a href="/" class="heading text-sm font-semibold hover:underline mt-2 block">Upload your first document →</a>
+                </div>
+            {% endif %}
+
+        </div>
+
+    </div>
+
+</body>
+</html>

@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invoice OCR</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root {
+            --bg: #0f0c08;
+            --card: #1a1510;
+            --border: #2e2416;
+            --accent: #c87941;
+            --accent-hover: #b56a34;
+            --text: #e8ddd0;
+            --muted: #6b5e4e;
+        }
+        * { box-sizing: border-box; }
+        body { background-color: var(--bg); }
+        .card { background-color: var(--card); border: 1px solid var(--border); }
+        .heading { color: var(--accent); }
+        .subtext { color: var(--muted); }
+        .bodytext { color: var(--text); }
+        .upload-zone { border: 2px dashed var(--border); transition: border-color 0.2s; }
+        .upload-zone:hover { border-color: var(--accent); }
+        .btn-primary { background-color: var(--accent); color: #fff; transition: background-color 0.2s; }
+        .btn-primary:hover { background-color: var(--accent-hover); }
+        .btn-secondary { background-color: #221c13; color: var(--accent); transition: background-color 0.2s; }
+        .btn-secondary:hover { background-color: #2e2416; }
+        .feature-card { background-color: #130f0a; border: 1px solid var(--border); }
+        .progress-track { background-color: var(--border); height: 4px; border-radius: 2px; }
+        .progress-bar { background-color: var(--accent); height: 4px; border-radius: 2px; transition: width 0.4s ease; width: 0%; }
+        .divider { border-color: var(--border); }
+        @keyframes grow {
+            from { width: 0% }
+            to { width: 20% }
+        }
+        .progress-bar-animate { animation: grow 2s ease forwards; }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--border);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            display: inline-block;
+        }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in { animation: fadeInUp 0.6s ease forwards; }
+        .fade-in-delay { animation: fadeInUp 0.6s ease 0.2s forwards; opacity: 0; }
+        .fade-in-delay-2 { animation: fadeInUp 0.6s ease 0.4s forwards; opacity: 0; }
+    </style>
+</head>
+<body class="min-h-screen">
+
+    <!-- Navbar -->
+    <nav class="border-b" style="border-color: var(--border); background-color: var(--bg);">
+        <div class="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
+            <h1 class="text-lg font-bold heading">Invoice OCR</h1>
+            <a href="/history/" class="btn-secondary text-sm font-semibold px-4 py-2 rounded-lg">History</a>
+        </div>
+    </nav>
+
+    <!-- Hero section -->
+    <div class="max-w-5xl mx-auto px-6 pt-16 pb-12 text-center fade-in">
+        <div class="inline-block mb-4 px-4 py-1 rounded-full text-xs font-semibold" 
+             style="background-color: #221c13; color: var(--accent); border: 1px solid var(--border);">
+            Powered by Tesseract OCR + Gemini AI
+        </div>
+        <h1 class="text-5xl font-bold bodytext mb-4 leading-tight">
+            Extract text from<br><span class="heading">any invoice or receipt</span>
+        </h1>
+        <p class="subtext text-lg max-w-xl mx-auto mb-8">
+            Upload your document and instantly compare traditional OCR with AI-powered extraction. See the difference side by side.
+        </p>
+        <a href="#upload" class="btn-primary inline-block font-semibold px-8 py-3 rounded-xl">
+            Try it now ↓
+        </a>
+    </div>
+
+    <!-- Features section -->
+    <div class="max-w-5xl mx-auto px-6 pb-16 fade-in-delay">
+        <div class="grid grid-cols-3 gap-4">
+
+            <div class="feature-card rounded-2xl p-6">
+                <div class="text-2xl mb-3">⚡</div>
+                <h3 class="bodytext font-bold mb-2">Fast & Local</h3>
+                <p class="subtext text-sm">Tesseract runs on our server. Your document never leaves — no third party services involved.</p>
+            </div>
+
+            <div class="feature-card rounded-2xl p-6">
+                <div class="text-2xl mb-3">✨ </div>
+                <h3 class="bodytext font-bold mb-2">AI Powered</h3>
+                <p class="subtext text-sm">Gemini Flash understands document layout and context, giving more accurate and organized results.</p>
+            </div>
+
+            <div class="feature-card rounded-2xl p-6">
+                <div class="text-2xl mb-3">🎖️</div>
+                <h3 class="bodytext font-bold mb-2">Side by Side</h3>
+                <p class="subtext text-sm">Compare both extraction methods instantly. See exactly where AI outperforms traditional OCR.</p>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Divider -->
+    <div class="max-w-5xl mx-auto px-6">
+        <hr class="divider mb-16">
+    </div>
+
+    <!-- Upload section -->
+    <div class="max-w-md mx-auto px-6 pb-16 fade-in-delay-2" id="upload">
+
+        <div class="text-center mb-8">
+            <h2 class="text-2xl font-bold bodytext mb-2">Upload a document</h2>
+            <p class="subtext text-sm">Supports JPEG, PNG and WEBP images</p>
+        </div>
+
+        <!-- Upload form -->
+        <div id="upload-section">
+            <form id="upload-form" method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+
+                <!-- Error box -->
+                <div id="error-box" style="display:none;" class="mb-4 px-4 py-3 rounded-xl text-sm font-semibold"
+                     style="background-color: #2e1a1a; color: #fca5a5;">
+                    <span id="error-text"></span>
+                </div>
+
+                <div class="card rounded-2xl p-6">
+                    <div class="upload-zone rounded-xl p-8 text-center mb-4">
+                        <p class="subtext text-sm mb-3">Click to select an image</p>
+                        <input type="file" name="file" accept="image/*" class="w-full text-sm bodytext cursor-pointer" id="file-input">
+                    </div>
+                    <button type="submit" class="btn-primary w-full font-semibold py-3 rounded-xl">
+                        Upload & Extract
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Progress section -->
+        <div id="progress-section" style="display:none;">
+            <div class="card rounded-2xl p-8">
+                <h2 class="text-xl font-bold heading mb-1">Processing...</h2>
+                <p class="subtext text-sm mb-6">Please wait while we extract text</p>
+
+                <div class="progress-track mb-8">
+                    <div class="progress-bar" id="progress-bar"></div>
+                </div>
+
+                <div class="space-y-4">
+                    <div class="flex items-center gap-3" id="step-upload">
+                        <span class="text-xl flex items-center">⏳</span>
+                        <div>
+                            <p class="bodytext text-sm font-semibold">Uploading file</p>
+                            <p class="subtext text-xs">Saving your document</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-3" id="step-tesseract">
+                        <span class="text-xl flex items-center">⏳</span>
+                        <div>
+                            <p class="bodytext text-sm font-semibold">Tesseract OCR</p>
+                            <p class="subtext text-xs">Running local text extraction</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-3" id="step-gemini">
+                        <span class="text-xl flex items-center">⏳</span>
+                        <div>
+                            <p class="bodytext text-sm font-semibold">Gemini AI</p>
+                            <p class="subtext text-xs">Running AI text extraction</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Footer -->
+    <div class="border-t text-center py-6" style="border-color: var(--border);">
+        <p class="subtext text-xs">Built with Django · Tesseract OCR · Gemini AI</p>
+    </div>
+
+<script>
+    const form = document.getElementById('upload-form');
+    const uploadSection = document.getElementById('upload-section');
+    const progressSection = document.getElementById('progress-section');
+    const progressBar = document.getElementById('progress-bar');
+    let currentInterval = null;
+    let currentTimeout = null;
+    let cancelled = false;
+
+    function showError(message) {
+        const errorBox = document.getElementById('error-box');
+        const errorText = document.getElementById('error-text');
+        errorBox.style.display = 'block';
+        errorBox.style.backgroundColor = '#2e1a1a';
+        errorBox.style.color = '#fca5a5';
+        errorText.textContent = message;
+    }
+
+    function setStep(stepId, status) {
+        const step = document.getElementById(stepId);
+        const icon = step.querySelector('span');
+        if (status === 'done') {
+            icon.innerHTML = '✅';
+        } else if (status === 'active') {
+            icon.innerHTML = '<div class="spinner"></div>';
+        } else {
+            icon.innerHTML = '⏳';
+        }
+    }
+
+    function pollProgress(documentId) {
+        cancelled = false;
+        currentInterval = setInterval(async () => {
+
+            if (cancelled) return;
+
+            const response = await fetch(`/progress/${documentId}/`);
+            const data = await response.json();
+
+            if (cancelled) return;
+
+            if (data.file_saved) {
+                progressBar.classList.remove('progress-bar-animate');
+                progressBar.style.width = '33%';
+                setStep('step-upload', 'done');
+                setStep('step-tesseract', 'active');
+                await new Promise(r => setTimeout(r, 800));
+            }
+
+            if (cancelled) return;
+
+            if (data.tesseract_done) {
+                progressBar.style.width = '66%';
+                setStep('step-tesseract', 'done');
+                await new Promise(r => setTimeout(r, 400));
+            }
+
+            if (cancelled) return;
+
+            if (data.tesseract_done) {
+                setStep('step-gemini', 'active');
+            }
+
+            if (data.gemini_done) {
+                progressBar.style.width = '100%';
+                setStep('step-gemini', 'done');
+            }
+
+            if (data.status === 'done') {
+                clearInterval(currentInterval);
+                currentInterval = null;
+                currentTimeout = setTimeout(() => {
+                    if (!cancelled) {
+                        window.location.href = `/result/${documentId}/`;
+                    }
+                }, 600);
+            }
+
+        }, 1000);
+    }
+
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const fileInput = document.getElementById('file-input');
+
+        if (!fileInput.files || fileInput.files.length === 0) {
+            showError('Please select a file before uploading.');
+            return;
+        }
+
+        const file = fileInput.files[0];
+
+        if (file.size > 5 * 1024 * 1024) {
+            showError('File is too large. Maximum size is 5MB.');
+            return;
+        }
+
+        const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/webp'];
+        if (!allowedTypes.includes(file.type)) {
+            showError('Invalid file type. Please upload a JPEG, PNG or WEBP image.');
+            return;
+        }
+
+        uploadSection.style.display = 'none';
+        progressSection.style.display = 'block';
+        setStep('step-upload', 'active');
+        progressBar.classList.add('progress-bar-animate');
+
+        const formData = new FormData(form);
+        const response = await fetch('/', {
+            method: 'POST',
+            body: formData,
+        });
+
+        const data = await response.json();
+        pollProgress(data.document_id);
+    });
+
+    window.addEventListener('pageshow', (event) => {
+        if (event.persisted) {
+            cancelled = true;
+            uploadSection.style.display = 'block';
+            progressSection.style.display = 'none';
+            progressBar.style.width = '0%';
+            progressBar.classList.remove('progress-bar-animate');
+            setStep('step-upload', 'pending');
+            setStep('step-tesseract', 'pending');
+            setStep('step-gemini', 'pending');
+            const fileInput = document.getElementById('file-input');
+            fileInput.value = '';
+            document.getElementById('error-box').style.display = 'none';
+        }
+    });
+
+    window.addEventListener('pagehide', () => {
+        cancelled = true;
+        if (currentInterval) {
+            clearInterval(currentInterval);
+            currentInterval = null;
+        }
+        if (currentTimeout) {
+            clearTimeout(currentTimeout);
+            currentTimeout = null;
+        }
+    });
+</script>
+</body>
+</html>
